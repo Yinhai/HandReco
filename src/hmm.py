@@ -70,6 +70,7 @@ class HMM(object):
         self.log.debug(' Time is ' + str(self.t) + ', Observed ' + observation + ', New State is ' + str(self.q) + ', Sequence is ' + str(self.O))
 
     def calc_forward(self, O):
+        self.scaling_factor = []
         T = len(O)
         alpha = zeros(T, self.N)
         #initalize
