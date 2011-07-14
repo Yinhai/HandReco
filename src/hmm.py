@@ -55,6 +55,7 @@ class HMM(object):
         self.q = select_random(self.pi)
         self.t = 0
         self.O = []
+        self.scaling_factor = []
         self.log = logging.getLogger('log')
         logging.basicConfig()
         self.log.debug(' Time is ' + str(self.t) + ', Initial State is ' + str(self.q) + ', Sequence is ' + str(self.O))
@@ -72,22 +73,27 @@ class HMM(object):
         T = len(O)
         alpha = zeros(T, self.N)
         #initalize
-        t = 0
-        for i in range(self.N):
-            alpha[t][i] = self.pi[i] * self.B[i][O[t]]
-        #induction
+        t = 0  
+        alpha[t] = [self.pi[i] * self.B[i][O[t]] for i in range(self.N)]   
+        #induction         
         for t in range(1,T):
+            self.scaling_factor.append(1.0/sum(alpha[t-1]))
+            alpha[t-1] = [self.scaling_factor[-1] * alpha[t-1][i] for i in range(self.N)]
             for j in range(self.N):
-                prob_sum = 0
-                for i in range(self.N):
+                prob_sum = 0  
+                for i in range(self.N):    
                     prob_sum += alpha[t-1][i] * self.A[i][j]
                 self.log.debug('t is ' + str(t) + ', i = ' + str(i) + ', j = ' +str(j) + ', O[t] = ' + str(O[t]) + ', prob_sum = ' + str(prob_sum) + ', B[j][O[t]] = ' + str(self.B[j][O[t]]))
                 alpha[t][j] = prob_sum * self.B[j][O[t]]
+        self.scaling_factor.append(1.0/sum(alpha[T-1]))
+        alpha[T-1] = [self.scaling_factor[-1] * alpha[T-1][i] for i in range(self.N)]
         return alpha
 
     def calc_backward(self, O):
         T = len(O)
+        self.calc_forward(O)
         beta = zeros(T, self.N)
+        scaling_factor = self.scaling_factor
         #initialization
         for i in range(self.N):
             beta[T-1][i] = 1.0
@@ -97,7 +103,8 @@ class HMM(object):
             for i in range(self.N):
                 prob_sum = 0
                 for j in range(self.N):
-                    prob_sum += self.A[i][j] * self.B[j][O[t+1]] * beta[t+1][j]
+                    #print('scaling_factor=' + str(scaling_factor))
+                    prob_sum += self.A[i][j] * (scaling_factor[t+1] *self.B[j][O[t+1]]) * beta[t+1][j]
                 beta[t][i] = prob_sum
         self.log.debug(' beta is ' + str(beta))
         return beta
@@ -121,13 +128,12 @@ class HMM(object):
                 delta[t][j] = max(acc) + math.log10(self.B[j][O[t]])
                 psi[t][j] = acc.index(max(acc))
         # path backtracking
-        start_from_last=[acc.index(max(delta[t][-1]))]
-        psi[t].reverse()
-        for t in range(1,T):
-            start_from_last.append(psi[t][start_from_last[-1]])
-        path_backtracking = [self.A[i] for i in start_from_last]
-        path_backtracking()
-        return path_backtracking
+        last_state = delta[T-1].index(max(delta[T-1]))
+        path = [last_state]
+        for t in range(T-1,0,-1):
+            path.append(psi[t][path[-1]])
+        path.reverse()
+        return path
     
     def baum_welch(self, O):
         ''' Call with a sequence of observations, e.g. O = [0,1,0,1]. The function will
@@ -141,6 +147,7 @@ class HMM(object):
         # We need to calculate the xi and gamma tables before can find the update values
         xi = zeros_3d(len(O) - 1, self.N, self.N)
         gamma = zeros(len(O) - 1, self.N)
+       
         # Begin with xi
         for t in range(len(O) - 1):
             s = 0
@@ -194,6 +201,7 @@ class HMM(object):
         beta = []
         P = []
         K = len(O)
+        
         for k in range(K):
             alpha.append(self.calc_forward(O[k]))
             beta.append(self.calc_backward(O[k]))
@@ -262,8 +270,10 @@ class TestHMM(unittest.TestCase):
                   [0.1, 0.9]]
         # row index is state, column index is observation
         # i.e. in state 0 we can only observe 'a' and in state 1 we can only observe 'b'
-        self.B = [[1.0, 0.0],
-                  [0.0, 1.0]]
+        # when the element inside B is larger than 0, there's no domain error for log,
+        # what if, we have 0.0 for some of the elements,like[[1.0][0.0],[0.1][0.9]]
+        self.B = [[0.9, 0.1],
+                  [0.2, 0.8]]
 
     def test_zeros(self):
         ''' Test the zeros function '''
@@ -271,12 +281,12 @@ class TestHMM(unittest.TestCase):
         self.assertEqual(zeros(3,1), [[0],[0],[0]])
         self.assertEqual(zeros(3,2), [[0,0], [0,0],[0,0]])
 
-    def test_generate(self):
+    #def test_generate(self):
         '''Create a HMM and generate 100 observations'''
-        h = HMM(self.pi, self.A, self.B, self.V)
-        h.log.setLevel(logging.DEBUG)
-        for i in range(100):
-            h.gen()
+        #h = HMM(self.pi, self.A, self.B, self.V)
+        #h.log.setLevel(logging.DEBUG)
+        #for i in range(100):
+            #h.gen()
 
     def test_forward(self):
         ''' fixme '''
@@ -295,7 +305,8 @@ class TestHMM(unittest.TestCase):
         h = HMM(self.pi, self.A, self.B, self.V)
         h.log.setLevel(logging.DEBUG)
         h.viterbi([0, 0])
-
+        #this is random set
+        self.assertEqual(h.viterbi([0,0]), [0,0])
 if __name__ == '__main__':
     unittest.main()
 
