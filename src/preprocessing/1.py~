@@ -1,0 +1,52 @@
+# -*- coding: cp936 -*-
+
+import Image,ImageFilter
+
+im = Image.open("down.png")
+print im.format, im.size, im.mode
+
+width, height = im.size
+im = im.convert('L')
+
+im= im.point(lambda i: 0 if i <= 100 else 255)
+
+wordLengh = 4
+characterWidth = width / wordLengh
+
+segments = [((i + 1) * characterWidth, 0, (i+1) * characterWidth + 2, height) for i in range(wordLengh)]
+
+for segment in segments:
+    region = im.crop(segment)
+    region = region.point(lambda i: 0)
+    im.paste(region, segment)
+im.show()
+    
+##out = im.filter(ImageFilter.SMOOTH)
+##out.show()
+##
+##print out.histogram()
+
+##Filters = [ImageFilter.BLUR, ImageFilter.CONTOUR, ImageFilter.DETAIL,
+##           ImageFilter.EDGE_ENHANCE, ImageFilter.EDGE_ENHANCE_MORE, ImageFilter.EMBOSS,
+##           ImageFilter.FIND_EDGES, ImageFilter.SMOOTH, ImageFilter.SMOOTH_MORE, ImageFilter.SHARPEN]
+##
+##for Filter in Filters:
+##    out = im.filter(Filter)
+##    out.show()
+
+##import ImageEnhance
+##
+##enhancer = ImageEnhance.Sharpness(im)
+##
+##for i in range(8):
+##    factor = i / 4.0
+##    enhancer.enhance(factor).show("Sharpness %f" % factor)
+
+
+##box = (0,0, im.width / 2, im.height /2)
+##region = im.crop(box)
+##
+##region = region.transpose(Image.ROTATE_180)
+##
+##im.paste(region, box)
+##im.show()
