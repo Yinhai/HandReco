@@ -9,7 +9,7 @@ from scikits.learn.lda import LDA
 iris = datasets.load_iris()
 
 X = iris.data
-print X.shape
+
 y = iris.target
 
 target_names = iris.target_names
@@ -24,7 +24,6 @@ X_r2 = lda.fit(X, y).transform(X)
 print 'explained variance ratio (first two components):', \
     pca.explained_variance_ratio_
 
-print X_r.shape, y.shape
 pl.figure()
 for c, i, target_name in zip("rgb", [0, 1, 2], target_names):
     pl.scatter(X_r[y == i, 0], X_r[y == i, 1], c=c, label=target_name)

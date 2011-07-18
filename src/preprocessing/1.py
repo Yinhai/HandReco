@@ -21,26 +21,19 @@ X = immatrix
 
 pca= PCA(n_components = 2)
 X_r = pca.fit(X).transform(X)
-
-y = numpy.array(['A', 'A', 'A','A', 'B','B','B','B'])
-
+print X_r
 print 'explained variance ratio (first two components):', \
     pca.explained_variance_ratio_
 
-print X_r.shape
-print X_r
 pl.figure()
 
 X_1 = X_r.T[0]
 X_2 = X_r.T[1]
 
-print X_r.shape, y.shape
-
 target_names = ['A', 'B']
-
 z = numpy.array(['r', 'r', 'r','r', 'b','b','b','b'])
-pl.scatter(X_1, X_2, s=80, c=z, marker=">")
 
+pl.scatter(X_1, X_2, s=80, c=z, marker=">")
 # for c, i, target_name in zip("rb", [0,1], target_names):
 #     #pl.scatter(X_1,X_2,s=80, c='r', marker=">")
 #     pl.scatter(X_r[y == i, 0], X_r[y == i, 1], c=c, label=target_name)
@@ -48,11 +41,17 @@ pl.legend()
 pl.title('PCA of IRIS dataset')
 
 # lda = LDA(n_components=2)
+# y = numpy.array(['A', 'A', 'A','A', 'B','B','B','B'])
+# y = numpy.array([0,0,0,0,1,1,1,1])
 # X_r2 = lda.fit(X, y).transform(X)
 
+# X_1 = X_r2.T[0]
+# X_2 = X_r2.T[1]
+
 # pl.figure()
-# for c, i, target_name in zip("rgb", [0, 1, 2], target_names):
-#     pl.scatter(X_r2[y == i, 0], X_r2[y == i, 1], c=c, label=target_name)
+# pl.scatter(X_1, X_2, s=80, c=z, marker=">")
+# # for c, i, target_name in zip("rgb", [0, 1, 2], target_names):
+# #     pl.scatter(X_r2[y == i, 0], X_r2[y == i, 1], c=c, label=target_name)
 # pl.legend()
 # pl.title('LDA of IRIS dataset')
 
