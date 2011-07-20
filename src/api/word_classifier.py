@@ -4,7 +4,8 @@ Created on Jul 10, 2011
 @author: kjell
 '''
 from api.word_hmm import WordHMM
-from api.word_examples_generator import generate_examples_for_words
+from api.word_examples_generator import generate_examples_for_words,\
+    get_example_alphabet
 from api.specialized_hmm import SpecializedHMM
 import unittest
 
@@ -16,11 +17,13 @@ class WordClassifier(object):
 
 
     def __init__(self,
-                 words_with_examples,
+                 words_with_examples=None,
                  nr_of_hmms_to_try=3,
                  fraction_of_examples_for_test=0.1,
                  train_with_examples=True,
-                 initialisation_method=SpecializedHMM.InitMethod.count_based):
+                 initialisation_method=SpecializedHMM.InitMethod.count_based,
+                 alphabet=get_example_alphabet(),
+                 from_string_string=None):
         '''
         Parameters:
         words_with_examples - is a list of tuples were the first element in the tuples
@@ -32,10 +35,20 @@ class WordClassifier(object):
         train_with_examples - if training should be perormed. Otherwise init will be done but not training
         All training examples will be used for both test and training if it is set to 0
         '''
+        if from_string_string != None:
+            #init from string
+            words,stringified_hmms = eval(from_string_string)
+            def destringify_hmm(hmm_string):
+                return WordHMM(from_string_string=hmm_string)
+            hmms = map(destringify_hmm,stringified_hmms)
+            self.hmms_for_words = hmms
+            self.words = words
+            return
         self.words_with_examples = words_with_examples
         self.nr_of_hmms_to_try = nr_of_hmms_to_try
         self.fraction_of_examples_for_test = fraction_of_examples_for_test
         self.initialisation_method  = initialisation_method
+        self.alphabet = alphabet
         self.train(train_with_examples)
         
     def train(self,train_with_examples=True):
@@ -75,12 +88,14 @@ class WordClassifier(object):
         hmms=[]
         for i in range(nr_of_hmms_to_try):
             if(self.initialisation_method==SpecializedHMM.InitMethod.count_based):
-                hmm = WordHMM(word, 
+                hmm = WordHMM(len(word), 
                               SpecializedHMM.InitMethod.count_based,
-                              training_examples)
+                              training_examples,
+                              alphabet=self.alphabet)
             elif(self.initialisation_method==SpecializedHMM.InitMethod.random):
-                hmm = WordHMM(word, 
-                              SpecializedHMM.InitMethod.random)
+                hmm = WordHMM(len(word), 
+                              SpecializedHMM.InitMethod.random,
+                              alphabet=self.alphabet)
             else:
                 raise "Init method not supported"
             if train_with_examples:
@@ -127,8 +142,13 @@ class WordClassifier(object):
         total_nr_of_tests = correctly_classified_counter + wrongly__classified_counter
         score = correctly_classified_counter / total_nr_of_tests
         return score
-        
-            
+    
+    def to_string(self):
+        def hmm_to_string(hmm):
+            return hmm.to_string()
+        stringified_hmms = map(hmm_to_string, self.hmms_for_words)
+        return str((self.words,stringified_hmms))
+     
 
 
 class TestWordClassifier(unittest.TestCase):
