@@ -38,5 +38,5 @@ im.show()
 
 words_lines = [(0,  line1[1], width, line2[1]) for line1, line2 in zip(ligible_lines[:-1],  ligible_lines[1:])]
 
-imshow()
+
 
